@@ -1,8 +1,5 @@
 import requests
 import time
-import os
-
-from dotenv import load_dotenv
 
 class TrueLayerHandler:
     def __init__(self, client_id, client_secret, redirect_uri, IP, refresh_token=None):
@@ -106,6 +103,20 @@ class TrueLayerHandler:
         }
 
         return requests.get(url, headers=headers)
+    
+    def requestPendingTransactions(self, account_id, date_from=None, date_to=None):
+        url = f"{self.base_url}{self.urls['pending'](account_id)}"
+        if date_from and date_to:
+            url += f"?from={date_from}&to={date_to}"
+
+        headers = {
+            "Accept": "application/json",
+            "X-Client-Correlation-Id": f"{self.client_id}",
+            "X-PSU-IP": f"{self.ip}",
+            "Authorization": f"Bearer {self.access_token}"
+        }
+
+        return requests.get(url, headers=headers)
 
     def requestBalance(self, account_id):
         url = f"{self.base_url}{self.urls['balance'](account_id)}"
@@ -184,6 +195,7 @@ class TrueLayerHandler:
             return response
 
         if response.status_code == 401:
+            print(response.text)
             self.refreshAccessToken()
             return self.makeRequest(request, called=called, *args, **kwargs)
 
