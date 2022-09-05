@@ -35,6 +35,7 @@ class DatabaseHandler:
             '''
             CREATE TABLE IF NOT EXISTS `transactions` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+                `normalised_id` VARCHAR(128),
                 `account_id` VARCHAR(32) NOT NULL,
                 `timestamp` DATE NOT NULL,
                 `amount` DECIMAL NOT NULL,
@@ -55,8 +56,8 @@ class DatabaseHandler:
             '''
             CREATE TABLE IF NOT EXISTS `pending_transactions` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-                `account_id` VARCHAR(32) NOT NULL,
                 `normalised_id` VARCHAR(128),
+                `account_id` VARCHAR(32) NOT NULL,
                 `timestamp` DATE NOT NULL,
                 `amount` DECIMAL NOT NULL,
                 `currency` VARCHAR(4) NOT NULL,
@@ -86,6 +87,25 @@ class DatabaseHandler:
         )
 
         self.con.commit()
+
+        return self.cursor.lastrowid
+
+    def getRefreshTokens(self, link_id=None):
+        if link_id:
+            res = self.cursor.execute(
+                '''
+                SELECT * FROM linked_accounts
+                WHERE id = ?
+                ''',
+                (link_id,)
+            )
+        else:
+            res = self.cursor.execute(
+                "SELECT * FROM linked_accounts"
+            )
+        
+        results = res.fetchall()
+        return [result for result in results]
 
     def addAccount(self, **kwargs):
         link_id = kwargs.get('link_id', None)
@@ -132,11 +152,33 @@ class DatabaseHandler:
 
         self.con.commit()
 
+        return self.cursor.lastrowid
+
+    def getAccounts(self, link_id=None):
+        if link_id:
+            res = self.cursor.execute(
+                '''
+                SELECT * FROM accounts
+                WHERE link_id = ?
+                ''',
+                (link_id, )
+            )
+        else:
+            res = self.cursor.execute(
+                "SELECT * FROM accounts"
+            )
+
+        results = res.fetchall()
+        keys = [x[0] for x in self.cursor.description]
+
+        return [{k: v for k,v in zip(keys, result)} for result in results] if results else None
+
     def insertTransaction(self, **kwargs):
         balance_amount = kwargs['running_balance']['amount']
         balance_currency = kwargs['running_balance']['currency']
 
         inserts = (
+            kwargs['normalised_provider_transaction_id'],
             kwargs['account_id'],
             kwargs['timestamp'][:10],
             kwargs['amount'],
@@ -153,46 +195,8 @@ class DatabaseHandler:
         self.cursor.execute(
             '''
             INSERT INTO transactions (
-                account_id,
-                timestamp,
-                amount,
-                currency,
-                merchant_name,
-                description,
-                type,
-                category,
-                classification,
-                balance_amount,
-                balance_currency
-            )
-            VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?
-            )
-            ''',
-            inserts
-        )
-
-        self.con.commit()
-
-    def insertPendingTransaction(self, **kwargs):
-        inserts = (
-            kwargs['account_id'],
-            kwargs['normalised_id'],
-            kwargs['timestamp'][:10],
-            kwargs['amount'],
-            kwargs['currency'],
-            kwargs.get('merchant_name', None),
-            kwargs['description'],
-            kwargs['transaction_type'],
-            kwargs['transaction_category'],
-            str(kwargs['transaction_classification']),
-            )
-
-        self.cursor.execute(
-            '''
-            INSERT INTO transactions (
-                account_id,
                 normalised_id,
+                account_id,
                 timestamp,
                 amount,
                 currency,
@@ -213,11 +217,50 @@ class DatabaseHandler:
 
         self.con.commit()
 
-    def getBalance(self, account_id):
+    def insertPendingTransaction(self, **kwargs):
+        inserts = (
+            kwargs['normalised_provider_transaction_id'],
+            kwargs['account_id'],
+            kwargs['timestamp'][:10],
+            kwargs['amount'],
+            kwargs['currency'],
+            kwargs.get('merchant_name', None),
+            kwargs['description'],
+            kwargs['transaction_type'],
+            kwargs['transaction_category'],
+            str(kwargs['transaction_classification']),
+            )
+
+        self.cursor.execute(
+            '''
+            INSERT INTO transactions (
+                normalised_id,
+                account_id,
+                timestamp,
+                amount,
+                currency,
+                merchant_name,
+                description,
+                type,
+                category,
+                classification,
+                balance_amount,
+                balance_currency
+            )
+            VALUES (
+                ?,?,?,?,?,?,?,?,?,?,?,?
+            )
+            ''',
+            inserts
+        )
+
+        self.con.commit()
+
+    def getLastTransaction(self, account_id):
         res = self.cursor.execute(
             '''
             SELECT 
-            balance_amount, balance_currency 
+            *
             FROM 
             transactions 
             WHERE account_id=?
@@ -225,5 +268,12 @@ class DatabaseHandler:
             ''',
             (account_id,)
         )
-        
-        return res.fetchone()
+
+        out = res.fetchone()
+        return {k[0]:v for k, v in zip(self.cursor.description, out)} if out else None
+
+    def getBalance(self, account_id):
+        last = self.getLastTransaction(account_id)
+        if last:
+            return (last['balance_amount'], last['balance_currency'])
+        return None

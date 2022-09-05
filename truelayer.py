@@ -48,9 +48,9 @@ class TrueLayerHandler:
         response = requests.post(url, json=payload, headers=headers)
 
         if response.status_code == 200:
-            response = response.json()
-            self.access_token = response['access_token']
-            self.refresh_token = response['refresh_token']
+            res = response.json()
+            self.access_token = res['access_token']
+            self.refresh_token = res['refresh_token']
 
         return response
 
@@ -71,9 +71,9 @@ class TrueLayerHandler:
         response = requests.post(url, json=payload, headers=headers)
 
         if response.status_code == 200:
-            response = response.json()
-            self.access_token = response['access_token']
-            self.refresh_token = response['refresh_token']
+            res = response.json()
+            self.access_token = res['access_token']
+            self.refresh_token = res['refresh_token']
         
         return response
 
