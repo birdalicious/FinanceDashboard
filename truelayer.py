@@ -35,10 +35,10 @@ class TrueLayerHandler:
 
         payload = {
             "grant_type": "authorization_code",
-            "client_id": f"{self.client_id}",
-            "client_secret": f"{self.client_secret}",
-            "redirect_uri": f"{self.redirect_uri}",
-            "code": f"{exCode}"
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "redirect_uri": self.redirect_uri,
+            "code": exCode
         }
         headers = {
             "Accept": "application/json",
@@ -59,9 +59,9 @@ class TrueLayerHandler:
 
         payload = {
             "grant_type": "refresh_token",
-            "client_id": f"{self.client_id}",
-            "client_secret": f"{self.client_secret}",
-            "refresh_token": f"{self.refresh_token}",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "refresh_token": self.refresh_token,
         }
         headers = {
             "Accept": "application/json",
@@ -83,8 +83,8 @@ class TrueLayerHandler:
 
         headers = {
             "Accept": "application/json",
-            "X-Client-Correlation-Id": f"{self.client_id}",
-            "X-PSU-IP": f"{self.ip}",
+            "X-Client-Correlation-Id": self.client_id,
+            "X-PSU-IP": self.ip,
             "Authorization": f"Bearer {self.access_token}"
         }
 
@@ -97,8 +97,8 @@ class TrueLayerHandler:
 
         headers = {
             "Accept": "application/json",
-            "X-Client-Correlation-Id": f"{self.client_id}",
-            "X-PSU-IP": f"{self.ip}",
+            "X-Client-Correlation-Id": self.client_id,
+            "X-PSU-IP": self.ip,
             "Authorization": f"Bearer {self.access_token}"
         }
 
@@ -111,8 +111,8 @@ class TrueLayerHandler:
 
         headers = {
             "Accept": "application/json",
-            "X-Client-Correlation-Id": f"{self.client_id}",
-            "X-PSU-IP": f"{self.ip}",
+            "X-Client-Correlation-Id": self.client_id,
+            "X-PSU-IP": self.ip,
             "Authorization": f"Bearer {self.access_token}"
         }
 
@@ -123,8 +123,8 @@ class TrueLayerHandler:
 
         headers = {
             "Accept": "application/json",
-            "X-Client-Correlation-Id": f"{self.client_id}",
-            "X-PSU-IP": f"{self.ip}",
+            "X-Client-Correlation-Id": self.client_id,
+            "X-PSU-IP": self.ip,
             "Authorization": f"Bearer {self.access_token}"
         }
 
@@ -135,8 +135,8 @@ class TrueLayerHandler:
 
         headers = {
             "Accept": "application/json",
-            "X-Client-Correlation-Id": f"{self.client_id}",
-            "X-PSU-IP": f"{self.ip}",
+            "X-Client-Correlation-Id": self.client_id,
+            "X-PSU-IP": self.ip,
             "Authorization": f"Bearer {self.access_token}"
         }
 
@@ -147,8 +147,8 @@ class TrueLayerHandler:
 
         headers = {
             "Accept": "application/json",
-            "X-Client-Correlation-Id": f"{self.client_id}",
-            "X-PSU-IP": f"{self.ip}",
+            "X-Client-Correlation-Id": self.client_id,
+            "X-PSU-IP": self.ip,
             "Authorization": f"Bearer {self.access_token}"
         }
 
@@ -165,8 +165,8 @@ class TrueLayerHandler:
         }
         headers = {
             "Accept": "application/json",
-            "X-Client-Correlation-Id": f"{self.client_id}",
-            "X-PSU-IP": f"{self.ip}",
+            "X-Client-Correlation-Id": self.client_id,
+            "X-PSU-IP": self.ip,
             "Authorization": f"Bearer {self.access_token}"
         }
 
