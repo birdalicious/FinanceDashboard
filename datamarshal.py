@@ -1,5 +1,6 @@
 import os
 import requests
+from datetime import date, datetime, timedelta
 
 from database import DatabaseHandler
 from truelayer import TrueLayerHandler
@@ -18,7 +19,7 @@ class DataMarshaller:
         self.db = DatabaseHandler(databaseFile)
 
         self.accounts = {}
-        
+        self.loadAccounts()
 
     def getIP(self):
         return requests.get('https://api.ipify.org').content.decode('utf8')
@@ -76,3 +77,41 @@ class DataMarshaller:
             self.db.addAccount(link_id=link_id, overdraft=overdraft, **account)
 
         return [(link_id, account['account_id']) for account in accounts]
+
+    def pullInitialTransactions(self, account_id, date_from=None, date_to=None):
+        if self.db.getLastTransaction(account_id):
+            return
+        tlHandler = self.accounts[account_id]
+        response = tlHandler.makeRequest(
+            tlHandler.requestTransactions,
+            account_id,
+            date_from=date_from,
+            date_to=date_to
+        )
+
+        results = response.json()['results']
+        for result in results[::-1]:
+            self.db.insertTransaction(account_id=account_id, **result)
+    
+    def pullTransactions(self, account_id):
+        last = self.db.getLastTransaction(account_id)
+        if not last:
+            return self.pullInitialTransactions(account_id)
+
+        date_from = datetime.strptime(last['timestamp'], '%Y-%m-%d').date() - timedelta(days=1)
+        date_to = date.today()
+
+        tlHandler = self.accounts[account_id]
+        response = tlHandler.makeRequest(
+            tlHandler.requestTransactions,
+            account_id,
+            date_from=date_from,
+            date_to=date_to
+        )
+        results = response.json()['results']
+
+        #Check the overlap
+        dbOverlap = {o[1] for o in self.db.getTransactions(account_id, date_from=date_from, date_to=last['timestamp'])}
+
+        for result in [r for r in results[::-1] if r['normalised_provider_transaction_id'] not in dbOverlap]:
+            self.db.insertTransaction(account_id=account_id, **result)

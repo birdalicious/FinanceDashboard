@@ -216,6 +216,26 @@ class DatabaseHandler:
         )
 
         self.con.commit()
+    
+    def getTransactions(self, account_id, date_from=None, date_to=None):
+        if date_from and date_to:
+            res = self.cursor.execute(
+                '''
+                SELECT * FROM transactions
+                WHERE timestamp BETWEEN ? AND ?
+                ORDER BY timestamp;
+                ''',
+                (date_from, date_to)
+            )
+        else:
+            res = self.cursor.execute(
+                '''
+                SELECT * FROM transactions
+                ORDER BY timestamp;
+                '''
+            )
+
+        return res.fetchall()
 
     def insertPendingTransaction(self, **kwargs):
         inserts = (
