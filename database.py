@@ -105,7 +105,7 @@ class DatabaseHandler:
             )
         
         results = res.fetchall()
-        return [result for result in results]
+        return results
 
     def addAccount(self, **kwargs):
         link_id = kwargs.get('link_id', None)
@@ -141,7 +141,7 @@ class DatabaseHandler:
                 overdraft,
                 currency,
                 account_number,
-                sort_code
+                sort_code,
             )
             VALUES (
                 ?,?,?,?,?,?,?,?
