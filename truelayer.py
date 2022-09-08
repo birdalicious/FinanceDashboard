@@ -1,23 +1,26 @@
+import re
 import requests
 import time
 
 def tlRequest(request):
-    def inner(self, *args, called=1 **kwargs):
+    def inner(self, *args, called=1, **kwargs):
         called += 1
         if called > 3:
             return "Too many errors"
 
-        response = request(*args, **kwargs)
+        response = request(self, *args, **kwargs)
 
         if response.status_code == 202:
             if 'results_uri' in response.json():
                 url = response.json()['result_uri']
-                return self.getResults(url)
+                return self.getResults(self, url)
             return response
         
         if response.status_code == 401:
             self.refreshAccessToken()
-            return request(called=called, *args, **kwargs)
+            return request(self, called=called, *args, **kwargs)
+
+        return response
 
     return inner
 
