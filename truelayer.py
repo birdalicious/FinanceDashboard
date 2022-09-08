@@ -1,4 +1,3 @@
-import re
 import requests
 import time
 
@@ -45,6 +44,7 @@ class TrueLayerHandler:
         types = {
             'accounts': 'data/v1/accounts',
             'cards': 'data/v1/cards',
+            'batch': 'data/v1/batch/transactions',
             'auth': 'https://auth.truelayer.com/connect/token',
         }
 
@@ -148,4 +148,54 @@ class TrueLayerHandler:
             url = self.endpoint('cards', 'balance')(account_id)
         else:
             url = self.endpoint('accounts', 'balance')(account_id)
+        return self.baseGetRequest(url)
+
+
+    @tlRequest
+    def getStandingOrders(self, account_id):
+        url = self.endpoint('account', 'standing_orders')(account_id)
+        return self.baseGetRequest(url)
+    @tlRequest
+    def getDirectDebits(self, account_id):
+        url = self.endpoint('account', 'direct_debits')(account_id)
+        return self.baseGetRequest(url)
+
+
+    @tlRequest
+    def getTransactions(self, date_from, date_to):
+        url = self.endpoint('batch')
+        
+        payload = {
+            "balance": True,
+            "pending": True,
+            "from": date_from,
+            "to": date_to
+        }
+        headers = {
+            "Accept": "application/json",
+            "X-Client-Correlation-Id": self.client_id,
+            "X-PSU-IP": self.ip,
+            "Authorization": f"Bearer {self.access_token}"
+        }
+
+        return requests.post(url, json=payload, headers=headers)
+
+    @tlRequest
+    def getAccountTransactions(
+            self,
+            accounts_id,
+            card=False,
+            pending=False,
+            date_from=None,
+            date_to=None
+        ):
+        end = 'pending' if pending else 'transactions'
+        if card:
+            url = self.endpoint('cards', end)(accounts_id)
+        else:
+            url = self.endpoint('accounts', end)(accounts_id)
+        
+        if date_from and date_to:
+            url += f"?from={date_from}&to={date_to}"
+        
         return self.baseGetRequest(url)
