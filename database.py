@@ -39,7 +39,7 @@ class DatabaseHandler:
                 `link_id` INT,
                 `type` VARCHAR(64),
                 `display_name` TEXT,
-                `limit` DECIMAL,
+                `credit_limit` DECIMAL,
                 `currency` VARCHAR(4),
                 `card_number` VARCHAR(8),
                 `expired` BOOLEAN NOT NULL,
@@ -125,6 +125,52 @@ class DatabaseHandler:
         results = res.fetchall()
         return results
 
+    def addCard(self, **kwargs):
+        link_id = kwargs.get('link_id', None)
+        if not link_id:
+            res = self.cursor.execute(
+                '''
+                SELECT id
+                FROM linked_accounts
+                WHERE refresh_token = ?
+                ''',
+                (kwargs['refresh_token'],)
+            )
+            link_id = res.fetchone()[0]
+
+        inserts = (
+            kwargs['account_id'],
+            link_id,
+            kwargs['card_type'],
+            kwargs['display_name'],
+            kwargs.get('credit_limit', 0),
+            kwargs['currency'],
+            kwargs['partial_card_number'],
+        )
+
+        self.cursor.execute(
+            '''
+            INSERT INTO cards (
+                account_id,
+                link_id,
+                type,
+                display_name,
+                credit_limit,
+                currency,
+                card_number,
+                expired
+            )
+            VALUES (
+                ?,?,?,?,?,?,?, 0
+            )
+            ''',
+            inserts
+        )
+
+        self.con.commit()
+
+        return self.cursor.lastrowid
+
     def addAccount(self, **kwargs):
         link_id = kwargs.get('link_id', None)
         if not link_id:
@@ -174,7 +220,7 @@ class DatabaseHandler:
         return self.cursor.lastrowid
     
     def setOverdraft(self, account_id, overdraft):
-        res = self.cursor.execute(
+        self.cursor.execute(
             '''
                 UPDATE accounts
                 SET overdraft = ?
@@ -183,24 +229,40 @@ class DatabaseHandler:
             (overdraft, account_id)
         )
 
-    def getAccounts(self, link_id=None):
+        self.con.commit()
+
+    def setCreditLimit(self, account_id, limit):
+        self.cursor.execute(
+            '''
+                UPDATE cards
+                SET credit_limit = ?
+                WHERE account_id = ?
+            ''',
+            (limit, account_id)
+        )
+
+        self.con.commit()
+
+    def getAccounts(self, link_id=None, cards=False):
+        table = 'cards' if cards else 'accounts'
         if link_id:
             res = self.cursor.execute(
-                '''
-                SELECT * FROM accounts
+                f'''
+                SELECT * FROM {table}
                 WHERE link_id = ?
                 ''',
                 (link_id, )
             )
         else:
             res = self.cursor.execute(
-                "SELECT * FROM accounts"
+                f"SELECT * FROM {table}"
             )
 
         results = res.fetchall()
         keys = [x[0] for x in self.cursor.description]
 
-        return [{k: v for k,v in zip(keys, result)} for result in results] if results else None
+        return [{k: v for k,v in zip(keys, result)} for result in results] if results else []
+
 
     def insertTransaction(self, **kwargs):
         balance_amount = kwargs['running_balance']['amount']
