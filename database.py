@@ -25,6 +25,24 @@ class DatabaseHandler:
                 `currency` VARCHAR(4),
                 `account_number` VARCHAR(8),
                 `sort_code` VARCHAR(8),
+                `expired` BOOLEAN NOT NULL,
+                PRIMARY KEY (`account_id`),
+                FOREIGN KEY (link_id) REFERENCES linked_accounts(id)
+            );
+            '''
+        )
+
+        self.cursor.execute(
+            '''
+            CREATE TABLE IF NOT EXISTS `cards` (
+                `account_id` VARCHAR(32) NOT NULL,
+                `link_id` INT,
+                `type` VARCHAR(64),
+                `display_name` TEXT,
+                `limit` DECIMAL,
+                `currency` VARCHAR(4),
+                `card_number` VARCHAR(8),
+                `expired` BOOLEAN NOT NULL,
                 PRIMARY KEY (`account_id`),
                 FOREIGN KEY (link_id) REFERENCES linked_accounts(id)
             );
@@ -142,9 +160,10 @@ class DatabaseHandler:
                 currency,
                 account_number,
                 sort_code,
+                expired
             )
             VALUES (
-                ?,?,?,?,?,?,?,?
+                ?,?,?,?,?,?,?,?, 0
             )
             ''',
             inserts
@@ -153,6 +172,16 @@ class DatabaseHandler:
         self.con.commit()
 
         return self.cursor.lastrowid
+    
+    def setOverdraft(self, account_id, overdraft):
+        res = self.cursor.execute(
+            '''
+                UPDATE accounts
+                SET overdraft = ?
+                WHERE account_id = ?
+            ''',
+            (overdraft, account_id)
+        )
 
     def getAccounts(self, link_id=None):
         if link_id:
