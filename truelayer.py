@@ -9,11 +9,14 @@ def tlRequest(request):
 
         response = request(self, *args, **kwargs)
 
-        if response.status_code == 202:
+        if response.status_code == 202 or response.status_code == 200:
             if 'results_uri' in response.json():
-                url = response.json()['result_uri']
-                return self.getResults(self, url)
+                url = response.json()['results_uri']
+                return self.getResults(url)
             return response
+        
+        if response.status_code == 204:
+            return self.getResults(*args, **kwargs)
         
         if response.status_code == 401:
             self.refreshAccessToken()
@@ -129,7 +132,7 @@ class TrueLayerHandler:
 
     @tlRequest
     def getResults(self, url):
-        time.sleep(1)
+        time.sleep(2.5)
         return self.baseGetRequest(url)
 
     @tlRequest
