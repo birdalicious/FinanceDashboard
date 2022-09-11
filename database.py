@@ -63,8 +63,8 @@ class DatabaseHandler:
                 `type` VARCHAR(10) NOT NULL,
                 `category` VARCHAR(64),
                 `classification` TEXT,
-                `balance_amount` DECIMAL NOT NULL,
-                `balance_currency` VARCHAR(4) NOT NULL,
+                `balance_amount` DECIMAL,
+                `balance_currency` VARCHAR(4),
                 FOREIGN KEY (account_id) REFERENCES accounts(account_id)
             );
             '''
@@ -265,8 +265,9 @@ class DatabaseHandler:
 
 
     def insertTransaction(self, **kwargs):
-        balance_amount = kwargs['running_balance']['amount']
-        balance_currency = kwargs['running_balance']['currency']
+        running_balance = kwargs.get('running_balance', None)
+        balance_amount = None if not running_balance else running_balance['amount']
+        balance_currency = None if not running_balance else running_balance['currency']
 
         inserts = (
             kwargs['normalised_provider_transaction_id'],
@@ -375,7 +376,7 @@ class DatabaseHandler:
             FROM 
             transactions 
             WHERE account_id=?
-            ORDER BY timestamp DESC LIMIT 1
+            ORDER BY timestamp DESC, id DESC LIMIT 1
             ''',
             (account_id,)
         )
