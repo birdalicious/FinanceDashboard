@@ -141,6 +141,20 @@ class DataMarshaller:
             self.db.addCard(link_id=link_id, **card)
             self.refreshOverdraft(card['account_id'], link_id, cards=True)
 
+    def pullTransactions(self):
+        today = date.today()
+        lastestDate = datetime.strptime("1970-01-01",  '%Y-%m-%d').date()
+
+        # Get latest date transactions were updated
+        for accounts in self.accounts.values():
+            for account in accounts:
+                accountLatestDate = datetime.strptime(self.db.getLastTransaction(account)['timestamp'] , '%Y-%m-%d').date()
+                if accountLatestDate > lastestDate:
+                    lastestDate = accountLatestDate
+            
+        for link in self.accounts.keys():
+            self.pullLinkTransactions(link, str(lastestDate), str(today))
+
     def pullLinkTransactions(self, link_id, date_from, date_to):
         tlHandler = self.tlHandlers[link_id]
 
@@ -185,9 +199,5 @@ class DataMarshaller:
                 for t in buffer[::-1]:
                     self.db.insertTransaction(
                         account_id=account_id,
-                        running_balance={
-                            'amount': account['balance']['current'],
-                            'currency': account['balance']['currency']
-                            },
                         **t
                     )
