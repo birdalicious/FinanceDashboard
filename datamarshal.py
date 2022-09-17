@@ -1,3 +1,4 @@
+from calendar import month
 import os
 import requests
 from datetime import date, datetime, timedelta
@@ -107,7 +108,9 @@ class DataMarshaller:
         balance = tlHandler.getBalance(account_id, cards).json()['results'][0]
         if cards:
             limit = balance['credit_limit']
+            payment_date = balance['payment_due_date']
             self.db.setCreditLimit(account_id, limit)
+            self.db.setPaymentDate(account_id, payment_date)
         else:
             overdraft = balance['overdraft']
             self.db.setOverdraft(account_id, overdraft)
@@ -143,17 +146,23 @@ class DataMarshaller:
 
     def pullTransactions(self):
         today = date.today()
-        lastestDate = datetime.strptime("1970-01-01",  '%Y-%m-%d').date()
 
         # Get latest date transactions were updated
-        for accounts in self.accounts.values():
+        for link, accounts in self.accounts.items():
+            lastestDate = datetime.strptime("3000-01-01",  '%Y-%m-%d').date()
+
             for account in accounts:
                 accountLatestDate = datetime.strptime(self.db.getLastTransaction(account)['timestamp'] , '%Y-%m-%d').date()
-                if accountLatestDate > lastestDate:
+                if accountLatestDate < lastestDate:
                     lastestDate = accountLatestDate
-            
-        for link in self.accounts.keys():
-            self.pullLinkTransactions(link, str(lastestDate), str(today))
+
+            if lastestDate < today:
+                self.pullLinkTransactions(link, str(lastestDate), str(today))
+
+    def pullInitialTransactions(self, link_id, days=60):
+        today = date.today()
+        date_from = today - timedelta(days=days)
+        self.pullLinkTransactions(link_id, str(date_from), str(today))
 
     def pullLinkTransactions(self, link_id, date_from, date_to):
         tlHandler = self.tlHandlers[link_id]

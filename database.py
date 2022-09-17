@@ -40,6 +40,7 @@ class DatabaseHandler:
                 `type` VARCHAR(64),
                 `display_name` TEXT,
                 `credit_limit` DECIMAL,
+                `payment_date` DATE,
                 `currency` VARCHAR(4),
                 `card_number` VARCHAR(8),
                 `expired` BOOLEAN NOT NULL,
@@ -65,6 +66,7 @@ class DatabaseHandler:
                 `classification` TEXT,
                 `balance_amount` DECIMAL,
                 `balance_currency` VARCHAR(4),
+                `unstructured` TEXT,
                 FOREIGN KEY (account_id) REFERENCES accounts(account_id)
             );
             '''
@@ -239,6 +241,18 @@ class DatabaseHandler:
                 WHERE account_id = ?
             ''',
             (limit, account_id)
+        )
+
+        self.con.commit()
+
+    def setPaymentDate(self, account_id, date):
+        self.cursor.execute(
+            '''
+                UPDATE cards
+                SET payment_date = ?
+                WHERE account_id = ?
+            ''',
+            (date, account_id)
         )
 
         self.con.commit()
