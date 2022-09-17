@@ -20,7 +20,7 @@ def tlRequest(request):
         
         if response.status_code == 401:
             self.refreshAccessToken()
-            return request(self, called=called, *args, **kwargs)
+            return tlRequest(request)(self, *args, called=called, **kwargs)
 
         return response
 
@@ -36,9 +36,6 @@ class TrueLayerHandler:
 
         self.access_token = None
         self.refresh_token = refresh_token
-
-        if self.refresh_token:
-            self.refreshAccessToken()
 
 
     def endpoint(self, type, key=None):
@@ -186,7 +183,7 @@ class TrueLayerHandler:
     @tlRequest
     def getAccountTransactions(
             self,
-            accounts_id,
+            account_id,
             card=False,
             pending=False,
             date_from=None,
@@ -194,9 +191,9 @@ class TrueLayerHandler:
         ):
         end = 'pending' if pending else 'transactions'
         if card:
-            url = self.endpoint('cards', end)(accounts_id)
+            url = self.endpoint('cards', end)(account_id)
         else:
-            url = self.endpoint('accounts', end)(accounts_id)
+            url = self.endpoint('accounts', end)(account_id)
         
         if date_from and date_to:
             url += f"?from={date_from}&to={date_to}"
