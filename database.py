@@ -1,4 +1,5 @@
 import sqlite3
+import json
 
 class DatabaseHandler:
     def __init__(self, file):
@@ -305,7 +306,7 @@ class DatabaseHandler:
             kwargs['description'],
             kwargs['transaction_type'],
             kwargs['transaction_category'],
-            str(kwargs['transaction_classification']),
+            json.dumps(kwargs['transaction_classification']),
             balance_amount,
             balance_currency
             )

@@ -181,7 +181,7 @@ class DataMarshaller:
                 overlap_date_to = date_to if not lastTransaction else lastTransaction['timestamp']
                 overlap_date_from = datetime.strptime(date_from, '%Y-%m-%d').date() - timedelta(days=1)
 
-                overlap = {o[1] for o in self.db.getTransactions(account_id, overlap_date_from, overlap_date_to)}
+                overlap = {o['normalised_id'] for o in self.db.getTransactions(account_id, overlap_date_from, overlap_date_to)}
 
                 transactions = [r for r in transactions[::-1] if r.get('normalised_provider_transaction_id', r['transaction_id']) not in overlap]
                 if len(transactions) == 0:
