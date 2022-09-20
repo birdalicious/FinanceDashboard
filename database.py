@@ -91,6 +91,18 @@ class DatabaseHandler:
             '''
         )
 
+        self.cursor.execute(
+            '''
+            CREATE TABLE IF NOT EXISTS `cardsBalance` (
+                `account_id` VARCHAR(32) NOT NULL,
+                `timestamp` DATE NOT NULL,
+                `balance` DECIMAL NOT NULL,
+                PRIMARY KEY (`account_id`, `timestamp`),
+                FOREIGN KEY (account_id) REFERENCES cards(account_id)
+            );
+            '''
+        )
+
         self.con.commit()
 
     def addRefreshToken(self, refresh_token):
@@ -341,7 +353,10 @@ class DatabaseHandler:
                 '''
             )
 
-        return res.fetchall()
+        results = res.fetchall()
+        keys = [x[0] for x in self.cursor.description]
+
+        return [{k: v for k,v in zip(keys, result)} for result in results] if results else []
 
     def insertPendingTransaction(self, **kwargs):
         inserts = (
