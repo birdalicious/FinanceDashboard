@@ -357,7 +357,50 @@ class DatabaseHandler:
         results = res.fetchall()
         keys = [x[0] for x in self.cursor.description]
 
-        return [{k: v for k,v in zip(keys, result)} for result in results] if results else []
+        out = [{k: v for k,v in zip(keys, result)} for result in results] if results else []
+
+        for transaction in out:
+            transaction['classification'] = json.loads(transaction['classification'])
+        
+        return out
+
+    def getTransaction(self, id=None, normalised_id=None):
+        idString = "id" if id else "normalised_id"
+
+        res = self.cursor.execute(
+            f'''
+            SELECT * FROM transactions
+            WHERE {idString}=?
+            ''',
+            (id or normalised_id, )
+        )
+
+        out = res.fetchone()
+        out =  {k[0]:v for k, v in zip(self.cursor.description, out)} if out else None
+
+        out['classification'] = json.loads(out['classification'])
+        return out
+
+    def updateTransaction(self, **kwargs):
+        inserts = (
+            kwargs['merchant_name'],
+            json.dumps(kwargs['classification']),
+            kwargs['description'],
+            kwargs['id']
+        )
+
+        self.cursor.execute(
+            '''
+            UPDATE transactions SET
+            merchant_name = ?,
+            classification = ?,
+            description = ?
+            WHERE id = ?
+            ''',
+            inserts
+        )
+
+        self.con.commit()
 
     def insertPendingTransaction(self, **kwargs):
         inserts = (
